@@ -20,6 +20,11 @@ steps:
     displayName: 'Install Node.js'
 
   - script: |
+      echo "Installing global dependencies"
+      npm install -g yarn ember-cli
+    displayName: 'Setup global deps'
+
+  - script: |
       yarn install
       yarn build
     displayName: 'install and build'
