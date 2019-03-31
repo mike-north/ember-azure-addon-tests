@@ -3,9 +3,6 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
-trigger:
-  - master
-
 strategy:
   matrix:
     linux:
@@ -13,22 +10,38 @@ strategy:
     windows:
       imageName: 'vs2017-win2016'
 
+pool:
+  vmImage: $(imageName)
+
+variables:
+  CI: true
+
+trigger:
+  paths:
+    exclude:
+      - README.md
+      - CHANGELOG.md
+      - CODE_OF_CONDUCT.md
+
 steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '10.x'
+      versionSpec: '8.x'
     displayName: 'Install Node.js'
 
   - script: |
-      echo "Installing global dependencies"
-      npm install -g yarn ember-cli
-    displayName: 'Setup global deps'
+      npm install -g yarn
+    displayName: 'Setup global tools'
 
   - script: |
       yarn install
-      yarn build
-    displayName: 'install and build'
+    displayName: 'Build'
 
   - script: |
       yarn test
-    displayName: 'run tests'
+    displayName: 'Run Tests'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'jUnit'
+      testResultsFiles: '*-tests.xml'

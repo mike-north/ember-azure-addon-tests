@@ -4,6 +4,9 @@ module.exports = {
   disable_watching: true,
   launch_in_ci: ['Chrome'],
   launch_in_dev: ['Chrome'],
+  reporter: 'xunit',
+  report_file: 'ember-tests.xml',
+  browser_start_timeout: 60000,
   browser_args: {
     Chrome: {
       ci: [
