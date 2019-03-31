@@ -1,24 +1,30 @@
-
 module.exports = {
   test_page: 'tests/index.html?hidepassed',
   disable_watching: true,
-  launch_in_ci: ['Chrome'],
-  launch_in_dev: ['Chrome'],
   reporter: 'xunit',
   report_file: 'ember-tests.xml',
+  xunit_exclude_stack: true, // we *probably* want this on to keep the xunit file clean
+  xunit_intermediate_output: true,
+  launch_in_ci: ['Chrome', 'Firefox'],
+  launch_in_dev: ['Chrome'],
   browser_start_timeout: 60000,
   browser_args: {
+    Firefox: { ci: ['-headless', '--window-size=1440,900'] },
     Chrome: {
-      ci: [
-        // --no-sandbox is needed when running Chrome inside a container
-        process.env.CI ? '--no-sandbox' : null,
+      mode: 'ci',
+      // prettier-disable -- args are useful to have in a sane order
+      args: [
         '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--disable-software-rasterizer',
-        '--mute-audio',
+        '--headless',
         '--remote-debugging-port=0',
-        '--window-size=1440,900'
-      ].filter(Boolean)
-    }
-  }
+        '--window-size=1440,900',
+      ].concat(
+        /*
+          --no-sandbox is needed when running Chrome inside a container.
+          See https://github.com/ember-cli/ember-cli-chai/pull/45/files.
+        */
+        (process.env.TRAVIS || process.env.CI) ? '--no-sandbox' : []
+      ),
+    },
+  },
 };
