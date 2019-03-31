@@ -30,7 +30,7 @@ steps:
     displayName: 'Build'
 
   - script: |
-      ember test -r xunit
+      yarn test -r xunit
     displayName: 'Ember App Tests'
 
   - script: |
