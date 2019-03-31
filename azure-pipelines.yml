@@ -2,16 +2,8 @@
 # Build a general Node.js project with npm.
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
-strategy:
-  matrix:
-    linux:
-      imageName: 'ubuntu-16.04'
-    windows:
-      imageName: 'vs2017-win2016'
-
 pool:
-  vmImage: $(imageName)
+  vmImage: 'ubuntu-16.04'
 
 variables:
   CI: true
@@ -38,8 +30,16 @@ steps:
     displayName: 'Build'
 
   - script: |
-      yarn test
-    displayName: 'Run Tests'
+      yarn ci:prepare
+    displayName: 'Prepare CI environment'
+
+  - script: |
+      yarn ci:test:app -r xunit
+    displayName: 'Ember App Tests'
+
+  - script: |
+      echo " --- EMBER TESTS --- " && cat ember-tests.xml
+    displayName: 'Log test output files'
 
   - task: PublishTestResults@2
     inputs:
