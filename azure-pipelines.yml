@@ -30,11 +30,7 @@ steps:
     displayName: 'Build'
 
   - script: |
-      yarn ci:prepare
-    displayName: 'Prepare CI environment'
-
-  - script: |
-      yarn ci:test:app -r xunit
+      ember test -r xunit
     displayName: 'Ember App Tests'
 
   - script: |
