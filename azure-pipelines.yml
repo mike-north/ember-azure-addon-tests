@@ -7,9 +7,7 @@ trigger:
       - master
   paths:
     exclude:
-      - README.md
-      - CHANGELOG.md
-      - CODE_OF_CONDUCT.md
+      - '**/*.md'
 
 variables:
   install_command: yarn install
