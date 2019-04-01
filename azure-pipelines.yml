@@ -15,12 +15,12 @@ variables:
 
 jobs:
   - job: linux_fixed
-    displayName: 'Linux - Fixed Deps'
+    displayName: 'linux - fixed deps'
     pool:
       vmImage: 'vs2017-win2016'
     steps:
       - template: .ado/ci-template.yml
-  - job: 'Windows'
+  - job: 'windows'
     pool:
       vmImage: 'ubuntu-16.04'
     steps:
@@ -33,19 +33,19 @@ jobs:
       - linux_fixed
     strategy:
       matrix:
-        ember-release:
+        release:
           displayName: 'release'
           ember-try-scenario: 'ember-release'
-        ember-beta:
+        beta:
           displayName: 'beta'
           ember-try-scenario: 'ember-beta'
-        ember-canary:
+        canary:
           displayName: 'canary'
           ember-try-scenario: 'ember-canary'
-        ember-lts-2.18:
+        lts-2.18:
           displayName: 'lts-2.18'
           ember-try-scenario: 'ember-lts-2.18'
-        ember-jquery:
+        jquery:
           displayName: 'optional jQuery'
           ember-try-scenario: 'ember-default-with-jquery'
       maxParallel: 5
@@ -55,7 +55,7 @@ jobs:
           testCommand: yarn ember try:one $(ember-try-scenario) -r xunit
           testDisplayName: 'Ember App Tests $(ember-try-scenario)'
   - job: linux_float
-    displayName: 'Linux - Floating Deps'
+    displayName: 'linux - floating deps'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn:
