@@ -15,29 +15,80 @@ trigger:
       - CHANGELOG.md
       - CODE_OF_CONDUCT.md
 
-steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '8.x'
-    displayName: 'Install Node.js'
 
-  - script: |
-      npm install -g yarn
-    displayName: 'Setup global tools'
+jobs:
+- job: basic
+  strategy:
+    matrix:
+      linux:
+        imageName: 'ubuntu-16.04'
+      windows:
+        imageName: 'vs2017-win2016'
+    maxParallel: 2
+  pool:
+    vmImage: $(imageName)
+  steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '8.x'
+      displayName: 'Install Node.js'
 
-  - script: |
-      yarn install
-    displayName: 'Build'
+    - script: |
+        npm install -g yarn
+      displayName: 'Setup global tools'
 
-  - script: |
-      yarn test -r xunit
-    displayName: 'Ember App Tests'
+    - script: |
+        yarn install
+      displayName: 'Build'
 
-  - script: |
-      echo " --- EMBER TESTS --- " && cat ember-tests.xml
-    displayName: 'Log test output files'
+    - script: |
+        ember test -r xunit
+      displayName: 'Ember App Tests'
 
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: 'jUnit'
-      testResultsFiles: '*-tests.xml'
+    - script: |
+        echo " --- EMBER TESTS --- " && cat ember-tests.xml
+      displayName: 'Log test output files'
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'jUnit'
+        testResultsFiles: '*-tests.xml'
+
+- job: compatibility
+  dependsOn:
+    - basic
+  strategy:
+    matrix:
+      ember-release:
+        ember-try-scenario: 'ember-release'
+      ember-beta:
+        ember-try-scenario: 'ember-beta'
+      ember-canary:
+        ember-try-scenario: 'ember-canary'
+    maxParallel: 5
+  steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '8.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install -g yarn
+      displayName: 'Setup global tools'
+
+    - script: |
+        yarn install
+      displayName: 'Build'
+
+    - script: |
+        ember try:one $(ember-try-scenario) -r xunit
+      displayName: 'Ember App Tests ($(ember-try-scenario))'
+
+    - script: |
+        echo " --- EMBER TESTS --- " && cat ember-tests.xml
+      displayName: 'Log test output files'
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'jUnit'
+        testResultsFiles: '*-tests.xml'
