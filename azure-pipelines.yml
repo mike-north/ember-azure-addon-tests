@@ -16,54 +16,24 @@ variables:
   test_command: yarn test -r xunit
 
 jobs:
-  - job: basic
-    displayName: 'OS Test:'
-    strategy:
-      matrix:
-        mac:
-          displayName: 'OS X'
-          imageName: 'macOS-10.13'
-        linux:
-          displayName: 'Linux'
-          imageName: 'ubuntu-16.04'
-        windows:
-          displayName: 'Windows'
-          imageName: 'vs2017-win2016'
-      maxParallel: 2
+  - job: linux
+    displayName: 'Linux'
     pool:
-      vmImage: $(imageName)
+      vmImage: 'vs2017-win2016'
     steps:
-      - task: NodeTool@0
-        inputs:
-          versionSpec: '8.x'
-        displayName: 'Install Node.js'
-
-      - script: |
-          npm install -g yarn
-        displayName: 'Setup global tools'
-
-      - script: |
-          $(install_command)
-        displayName: 'Build'
-
-      - script: |
-          $(test_command)
-        displayName: 'Ember App Tests'
-
-      - script: |
-          echo " --- EMBER TESTS --- " && cat ember-tests.xml
-        displayName: 'Log test output files'
-
-      - task: PublishTestResults@2
-        inputs:
-          testResultsFormat: 'jUnit'
-          testResultsFiles: '*-tests.xml'
+      - template: .ado/ci-template.yml
+  - job: windows
+    displayName: 'Windows'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    steps:
+      - template: .ado/ci-template.yml
   - job: compatibility
     displayName: 'Compatibility Scenario:'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn:
-      - basic
+      - linux
     strategy:
       matrix:
         ember-release:
@@ -77,60 +47,17 @@ jobs:
           ember-try-scenario: 'ember-canary'
       maxParallel: 5
     steps:
-      - task: NodeTool@0
-        inputs:
-          versionSpec: '8.x'
-        displayName: 'Install Node.js'
-
-      - script: |
-          npm install -g yarn
-        displayName: 'Setup global tools'
-
-      - script: |
-          yarn install
-        displayName: 'Build'
-
-      - script: |
-          ember try:one $(ember-try-scenario) -r xunit
-        displayName: 'Ember App Tests ($(ember-try-scenario))'
-
-      - script: |
-          echo " --- EMBER TESTS --- " && cat ember-tests.xml
-        displayName: 'Log test output files'
-
-      - task: PublishTestResults@2
-        inputs:
-          testResultsFormat: 'jUnit'
-          testResultsFiles: '*-tests.xml'
+      - template: .ado/ci-template.yml
+        parameters:
+          testCommand: yarn ember try:one $(ember-try-scenario) -r xunit
+          testDisplayName: 'Ember App Tests $(ember-try-scenario)'
   - job: floating_dependencies
-    displayName: 'Floating Dependencies'
+    displayName: 'Linux (Floating Dependencies)'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn:
-      - basic
+      - linux
     steps:
-      - task: NodeTool@0
-        inputs:
-          versionSpec: '8.x'
-        displayName: 'Install Node.js'
-
-      - script: |
-          npm install -g yarn
-        displayName: 'Setup global tools'
-
-      - script: |
-          yarn install --ignore-lockfile
-        displayName: 'Build'
-
-      - script: |
-          yarn test -r xunit
-        displayName: 'Ember App Tests ($(ember-try-scenario))'
-
-      - script: |
-          echo " --- EMBER TESTS --- " && cat ember-tests.xml
-        displayName: 'Log test output files'
-
-      - task: PublishTestResults@2
-        inputs:
-          testResultsFormat: 'jUnit'
-          testResultsFiles: '*-tests.xml'
+      - template: .ado/ci-template.yml
+        parameters:
+          installCommand: yarn install --no-lockfile

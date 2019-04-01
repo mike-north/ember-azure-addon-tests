@@ -1,0 +1,31 @@
+parameters:
+  installCommand: 'yarn install'
+  testCommand: 'yarn test -r xunit'
+  testDisplayName: 'Ember App Tests'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+
+  - script: |
+      npm install -g yarn
+    displayName: 'Setup global tools'
+
+  - script: |
+      ${{ parameters.installCommand }}
+    displayName: 'Build'
+
+  - script: |
+      ${{ parameters.testCommand }}
+    displayName: ${{ parameters.testDisplayName }}
+
+  - script: |
+      echo " --- EMBER TESTS --- " && cat ember-tests.xml
+    displayName: 'Log test output files'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'jUnit'
+      testResultsFiles: '*-tests.xml'
