@@ -1,9 +1,5 @@
-pool:
-  vmImage: 'ubuntu-16.04'
-
-variables:
-  CI: true
-
+pr:
+  - master
 trigger:
   batch: true
   branches:
@@ -15,110 +11,122 @@ trigger:
       - CHANGELOG.md
       - CODE_OF_CONDUCT.md
 
-
 jobs:
-- job: basic
-  strategy:
-    matrix:
-      linux:
-        imageName: 'ubuntu-16.04'
-      windows:
-        imageName: 'vs2017-win2016'
-    maxParallel: 2
-  pool:
-    vmImage: $(imageName)
-  steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '8.x'
-      displayName: 'Install Node.js'
+  - job: basic
+    displayName: 'OS Test:'
+    strategy:
+      matrix:
+        mac:
+          displayName: 'OS X'
+          imageName: 'macOS-10.13'
+        linux:
+          displayName: 'Linux'
+          imageName: 'ubuntu-16.04'
+        windows:
+          displayName: 'Windows'
+          imageName: 'vs2017-win2016'
+      maxParallel: 2
+    pool:
+      vmImage: $(imageName)
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '8.x'
+        displayName: 'Install Node.js'
 
-    - script: |
-        npm install -g yarn
-      displayName: 'Setup global tools'
+      - script: |
+          npm install -g yarn
+        displayName: 'Setup global tools'
 
-    - script: |
-        yarn install
-      displayName: 'Build'
+      - script: |
+          yarn install
+        displayName: 'Build'
 
-    - script: |
-        ember test -r xunit
-      displayName: 'Ember App Tests'
+      - script: |
+          yarn test -r xunit
+        displayName: 'Ember App Tests'
 
-    - script: |
-        echo " --- EMBER TESTS --- " && cat ember-tests.xml
-      displayName: 'Log test output files'
+      - script: |
+          echo " --- EMBER TESTS --- " && cat ember-tests.xml
+        displayName: 'Log test output files'
 
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFormat: 'jUnit'
-        testResultsFiles: '*-tests.xml'
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'jUnit'
+          testResultsFiles: '*-tests.xml'
+  - job: compatibility
+    displayName: 'Compatibility Scenario:'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    dependsOn:
+      - basic
+    strategy:
+      matrix:
+        ember-release:
+          displayName: 'ember-release'
+          ember-try-scenario: 'ember-release'
+        ember-beta:
+          displayName: 'ember-beta'
+          ember-try-scenario: 'ember-beta'
+        ember-canary:
+          displayName: 'ember-canary'
+          ember-try-scenario: 'ember-canary'
+      maxParallel: 5
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '8.x'
+        displayName: 'Install Node.js'
 
-- job: compatibility
-  dependsOn:
-    - basic
-  strategy:
-    matrix:
-      ember-release:
-        ember-try-scenario: 'ember-release'
-      ember-beta:
-        ember-try-scenario: 'ember-beta'
-      ember-canary:
-        ember-try-scenario: 'ember-canary'
-    maxParallel: 5
-  steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '8.x'
-      displayName: 'Install Node.js'
+      - script: |
+          npm install -g yarn
+        displayName: 'Setup global tools'
 
-    - script: |
-        npm install -g yarn
-      displayName: 'Setup global tools'
+      - script: |
+          yarn install
+        displayName: 'Build'
 
-    - script: |
-        yarn install
-      displayName: 'Build'
+      - script: |
+          ember try:one $(ember-try-scenario) -r xunit
+        displayName: 'Ember App Tests ($(ember-try-scenario))'
 
-    - script: |
-        ember try:one $(ember-try-scenario) -r xunit
-      displayName: 'Ember App Tests ($(ember-try-scenario))'
+      - script: |
+          echo " --- EMBER TESTS --- " && cat ember-tests.xml
+        displayName: 'Log test output files'
 
-    - script: |
-        echo " --- EMBER TESTS --- " && cat ember-tests.xml
-      displayName: 'Log test output files'
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'jUnit'
+          testResultsFiles: '*-tests.xml'
+  - job: floating_dependencies
+    displayName: 'Floating Dependencies'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    dependsOn:
+      - basic
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '8.x'
+        displayName: 'Install Node.js'
 
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFormat: 'jUnit'
-        testResultsFiles: '*-tests.xml'
+      - script: |
+          npm install -g yarn
+        displayName: 'Setup global tools'
 
-- job: "Floating dependencies"
-  dependsOn:
-    - basic
-  steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '8.x'
-      displayName: 'Install Node.js'
+      - script: |
+          yarn install --ignore-lockfile
+        displayName: 'Build'
 
-    - script: |
-        npm install -g yarn
-      displayName: 'Setup global tools'
+      - script: |
+          yarn test -r xunit
+        displayName: 'Ember App Tests ($(ember-try-scenario))'
 
-    - script: |
-        yarn install --ignore-lockfile
-      displayName: 'Build'
+      - script: |
+          echo " --- EMBER TESTS --- " && cat ember-tests.xml
+        displayName: 'Log test output files'
 
-    - script: |
-        ember test -r xunit
-      displayName: 'Ember App Tests ($(ember-try-scenario))'
-
-    - script: |
-        echo " --- EMBER TESTS --- " && cat ember-tests.xml
-      displayName: 'Log test output files'
-
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFormat: 'jUnit'
-        testResultsFiles: '*-tests.xml'
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'jUnit'
+          testResultsFiles: '*-tests.xml'
