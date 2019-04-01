@@ -92,3 +92,33 @@ jobs:
       inputs:
         testResultsFormat: 'jUnit'
         testResultsFiles: '*-tests.xml'
+
+- job: "Floating dependencies"
+  dependsOn:
+    - basic
+  steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '8.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install -g yarn
+      displayName: 'Setup global tools'
+
+    - script: |
+        yarn install --ignore-lockfile
+      displayName: 'Build'
+
+    - script: |
+        ember test -r xunit
+      displayName: 'Ember App Tests ($(ember-try-scenario))'
+
+    - script: |
+        echo " --- EMBER TESTS --- " && cat ember-tests.xml
+      displayName: 'Log test output files'
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'jUnit'
+        testResultsFiles: '*-tests.xml'
