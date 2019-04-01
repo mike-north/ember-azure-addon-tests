@@ -16,47 +16,52 @@ variables:
   test_command: yarn test -r xunit
 
 jobs:
-  - job: linux
-    displayName: 'Linux'
+  - job: linux_fixed
+    displayName: 'Linux - Fixed Deps'
     pool:
       vmImage: 'vs2017-win2016'
     steps:
       - template: .ado/ci-template.yml
-  - job: windows
-    displayName: 'Windows'
+  - job: 'Windows'
     pool:
       vmImage: 'ubuntu-16.04'
     steps:
       - template: .ado/ci-template.yml
   - job: compatibility
-    displayName: 'Compatibility Scenario:'
+    displayName: 'ember'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn:
-      - linux
+      - linux_fixed
     strategy:
       matrix:
         ember-release:
-          displayName: 'ember-release'
+          displayName: 'release'
           ember-try-scenario: 'ember-release'
         ember-beta:
-          displayName: 'ember-beta'
+          displayName: 'beta'
           ember-try-scenario: 'ember-beta'
         ember-canary:
-          displayName: 'ember-canary'
+          displayName: 'canary'
           ember-try-scenario: 'ember-canary'
+        ember-lts-2.18:
+          displayName: 'lts-2.18'
+          ember-try-scenario: 'ember-lts-2.18'
+        ember-jquery:
+          displayName: 'optional jQuery'
+          ember-try-scenario: 'ember-default-with-jquery'
       maxParallel: 5
     steps:
       - template: .ado/ci-template.yml
         parameters:
           testCommand: yarn ember try:one $(ember-try-scenario) -r xunit
           testDisplayName: 'Ember App Tests $(ember-try-scenario)'
-  - job: floating_dependencies
-    displayName: 'Linux (Floating Dependencies)'
+  - job: linux_float
+    displayName: 'Linux - Floating Deps'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn:
-      - linux
+      - linux_fixed
     steps:
       - template: .ado/ci-template.yml
         parameters:
