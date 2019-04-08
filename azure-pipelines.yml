@@ -1,13 +1,7 @@
-pr:
-  - master
 trigger:
-  batch: true
-  branches:
-    include:
-      - master
   paths:
     exclude:
-      - '**/*.md'
+      - '**/*.mdd'
 
 variables:
   install_command: yarn install
